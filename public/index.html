@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <link href="/dist/output.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+  <script src="https://unpkg.com/moralis/dist/moralis.js"></script>
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta
+          name="description"
+          content="Web site created using create-react-app"
+  />
+  <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+  <!--
+    manifest.json provides metadata used when your web app is installed on a
+    user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+  -->
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+  <!--
+    Notice the use of %PUBLIC_URL% in the tags above.
+    It will be replaced with the URL of the `public` folder during the build.
+    Only files inside the `public` folder can be referenced from the HTML.
+
+    Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+    work correctly both with client-side routing and a non-root public URL.
+    Learn how to configure a non-root public URL by running `npm run build`.
+  -->
+  <title>React App</title>
+</head>
+<body>
+<noscript>You need to enable JavaScript to run this app.</noscript>
+<div id="root"></div>
+
+<!--
+<button id="btn-login">Moralis Login</button>
+<button id="btn-logout">Logout</button>
+-->
+
+<!--
+
+  This HTML file is a template.
+  If you open it directly in the browser, you will see an empty page.
+
+  You can add webfonts, meta tags, or analytics to this file.
+  The build step will place the bundled scripts into the <body> tag.
+
+  To begin the development, run `npm start` or `yarn start`.
+  To create a production bundle, use `npm run build` or `yarn build`.
+-->
+<script>
+
+  const serverUrl = "https://rzxmetuienku.usemoralis.com:2053/server";
+  const appId = "BR2OSbmCKrA00dsEOEPf4DxPi6FxWzwXgHBZyLuE";
+  Moralis.start({ serverUrl, appId });
+
+  async function login() {
+    console.log("inside login");
+    let user = Moralis.User.current();
+    if (!user) {
+      user = await Moralis.authenticate({ signingMessage: "Log in using Moralis" })
+              .then(function (user) {
+                console.log("logged in user:", user);
+                console.log(user.get("ethAddress"));
+              })
+              .catch(function (error) {
+                console(error);
+              });
+    }
+  }
+
+  async function logOut() {
+    console.log("inside logout");
+    await Moralis.User.logOut();
+    console.log("logged out");
+  }
+
+  async function returnBalance() {
+    const options = { chain: "eth", address:"0x69c1240100eF812C6caDD4bDC02ad00473862d6a", direction: 'both' };
+    let tokenMetadata = await Moralis.Web3API.account.getTokenBalances({address: '0x2641b9724f7cdC3F258AC31c18c9f756533FF7E3', chain: 'rinkeby'})
+    console.log(tokenMetadata);
+    const balance = (tokenMetadata[0]["balance"] / Math.pow(10,18)).toFixed(2);;
+    console.log(balance);
+
+    document.getElementById("balance").innerText = "Pool Balance: " + balance + " Metis";
+  }
+
+  const returnMetisPrice = async() => {
+    let price = await Moralis.Web3API.token.getTokenPrice({address: "0x9E32b13ce7f2E80A01932B42553652E053D6ed8e"});
+    console.log(price);
+    let total = (price.usdPrice * document.getElementById("price").value).toFixed(2);
+
+    document.getElementById("metisprice").innerText = "USD: " + total;
+  }
+
+  const donateToAddress = async(reciever) => {
+    console.log("inside runcode");
+//Get metadata for an array of tokens
+
+    const amount = await document.getElementById("price").value;
+    console.log(amount);
+    const web3 = await Moralis.enableWeb3();
+    Moralis.transfer({type: "erc20", amount: Moralis.Units.Token(amount, "18"), receiver: reciever, contractAddress: "0xe552Fb52a4F19e44ef5A967632DBc320B0820639"});
+    returnBalance();
+  }
+
+  window.onload = function() {
+    returnBalance();
+    returnMetisPrice();
+    //document.getElementById("btn-login").onclick = login;
+    //document.getElementById("btn-logout").onclick = logOut;
+    document.getElementById("donate-pool").onclick = function(){ donateToAddress("0x2641b9724f7cdC3F258AC31c18c9f756533FF7E3");}
+
+    document.getElementById("price").onchange = returnMetisPrice;
+  };
+
+</script>
+
+</body>
+</html>
